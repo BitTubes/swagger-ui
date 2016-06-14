@@ -33,6 +33,69 @@
   <!-- <script src='lang/en.js' type='text/javascript'></script> -->
 
   <script type="text/javascript">
+    var bittubes = (function() {
+      if (window.location.protocol != "https:") {
+        window.location.href = "https:" + window.location.href.substring(window.location.protocol.length);
+      }
+  
+  
+      var access_token;
+      var currentToken = null;
+      var timerHandle;
+      var init = function() {
+        setApiFormFields();
+        currentToken = getUriToken();
+        checkStorageToken(access_token);
+        addApiKeyAuthorization();
+      };
+  
+  
+  
+      return init;
+  
+  
+  
+      function getUriToken() {
+        var access_token = window.location.search.match(/access_token=([^&]+)/);
+        if (access_token && access_token.length > 1) {
+          return decodeURIComponent(access_token[1]);
+        } else {
+          return null;
+        }
+      }
+      function checkStorageToken(access_token) {
+        if(!access_token) {
+          access_token = JSON.parse(localStorage.getItem('token'));
+        }
+        timerHandle = window.setTimeout(checkStorageToken,10000);
+        if(access_token && access_token != currentToken) {
+          currentToken = access_token;
+          addApiKeyAuthorization();
+        }
+      }
+      function setApiFormFields() {
+        var api = window.location.search.match(/api=([^&]+)/);
+        if(api && api.length > 1) {
+          api = decodeURIComponent(api[1]);
+          $('input[name="api"]').val(api);
+        }
+      }
+      function addApiKeyAuthorization(){
+        var key = currentToken;
+        if(key && key.trim() != "") {
+            // var apiKeyAuth = new SwaggerClient.ApiKeyAuthorization("access_token", key, "query");
+            // window.swaggerUi.api.clientAuthorizations.add("access_token", apiKeyAuth);
+            var apiKeyAuthHeader = new SwaggerClient.ApiKeyAuthorization("Authorization", "Bearer "+key, "header");
+            window.swaggerUi.api.clientAuthorizations.add("key", apiKeyAuthHeader);
+  
+            // console.log("added key " + key);
+        }
+      }
+  
+  
+    })();
+
+
     $(function () {
       var url = window.location.search.match(/url=([^&]+)/);
       if (url && url.length > 1) {
@@ -64,6 +127,8 @@
               additionalQueryStringParams: {}
             });
           }
+
+          bittubes();
 
           if(window.SwaggerTranslator) {
             window.SwaggerTranslator.translate();
